@@ -38,8 +38,8 @@ async function run() {
     const reviewCollection = dbCollection.collection('reviews');
 
     // payment intent
-    app.post('/create-payment-intent', async (req,res)=>{
-      const {price} = req.body;
+    app.post('/create-payment-intent', async (req, res) => {
+      const { price } = req.body;
       const amount = parseInt(price * 100);
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
@@ -52,88 +52,92 @@ async function run() {
     })
 
     // payment related API
-    app.post("/payments", async(req,res)=>{
+    app.post("/payments", async (req, res) => {
       const payment = req.body;
       const result = await paymentCollection.insertOne(payment);
-      console.log("payment info: ",payment)
+      console.log("payment info: ", payment)
       res.send(result)
     })
 
     // meals API
-    app.get('/meals', async (req,res)=>{
-      const { search, category, minPrice, maxPrice} = req.query;
+    app.get('/meals', async (req, res) => {
+      const { search, category, minPrice, maxPrice, page = 1, limit = 6 } = req.query;
       let filter = {};
       if (search) {
         filter.title = { $regex: search, $options: "i" };
-    }
-    if (category) {
-      filter.category = category;
-  }
-  if (minPrice || maxPrice) {
-    filter.price = {};
-    if (minPrice) filter.price.$gte = parseFloat(minPrice);
-    if (maxPrice) filter.price.$lte = parseFloat(maxPrice);
-  }
-        const result = await mealsCollection.find(filter).toArray();
-        res.send(result)
+      }
+      if (category) {
+        filter.category = category;
+      }
+      if (minPrice || maxPrice) {
+        filter.price = {};
+        if (minPrice) filter.price.$gte = parseFloat(minPrice);
+        if (maxPrice) filter.price.$lte = parseFloat(maxPrice);
+      }
+
+      const pageNum = parseInt(page);
+      const limitNum = parseInt(limit);
+      const skip = (pageNum - 1) * limitNum;
+      const result = await mealsCollection.find(filter).skip(skip).limit(limitNum).toArray();
+      res.send(result)
     })
-    app.get('/meals/:id', async(req,res)=>{
-        const id = req.params.id;
-        const query = {_id: new ObjectId(id)};
-        const result = await mealsCollection.findOne(query);
-        res.send(result)
+    app.get('/meals/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await mealsCollection.findOne(query);
+      res.send(result)
     })
-    app.patch('/meals/:id', async(req,res)=>{
-        const id = req.params.id;
-        const filter = {_id: new ObjectId(id)};
-        const likedData = req.body
-        const updatedDoc = {
-          $set: {
-              like: likedData.like
-          }
+    app.patch('/meals/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const likedData = req.body
+      const updatedDoc = {
+        $set: {
+          like: likedData.like
         }
-        const result = await mealsCollection.updateOne(filter,updatedDoc);
-        res.send(result)
+      }
+      const result = await mealsCollection.updateOne(filter, updatedDoc);
+      res.send(result)
     })
 
     // Packages API
-    app.get('/packages', async (req,res)=>{
+    app.get('/packages', async (req, res) => {
       const result = await packageCollection.find().toArray();
       res.send(result)
     })
 
     // user API
-    app.post('/users', async(req,res)=>{
+    app.post('/users', async (req, res) => {
       const user = req.body;
       const result = await userCollection.insertOne(user);
       res.send(result)
     })
-    app.get('/users',async(req,res)=>{
+    app.get('/users', async (req, res) => {
       const result = await userCollection.find().toArray();
       res.send(result)
     })
-    app.patch('/users/:email',async(req,res)=>{
+    app.patch('/users/:email', async (req, res) => {
       const email = req.params.email;
       const badge = req.body;
-      const filter = {email: email};
+      const filter = { email: email };
       const options = { upsert: true };
       const updatedDoc = {
         $set: badge
       }
-      const result = await userCollection.updateOne(filter,updatedDoc,options)
+      const result = await userCollection.updateOne(filter, updatedDoc, options)
       res.send(result)
 
     })
 
     // meal request api
-    app.post('/requestedMeal', async(req,res)=>{
-       const requestedMeal = req.body;
-       const result = await requestedMealCollection.insertOne(requestedMeal);
-       res.send(result)
+    app.post('/requestedMeal', async (req, res) => {
+      const requestedMeal = req.body;
+      const result = await requestedMealCollection.insertOne(requestedMeal);
+      res.send(result)
     })
 
     // review api
-    app.post('/reviews', async(req,res)=>{
+    app.post('/reviews', async (req, res) => {
       const reviewData = req.body;
       const result = await reviewCollection.insertOne(reviewData);
       res.send(result)
@@ -150,10 +154,10 @@ async function run() {
 run().catch(console.dir);
 
 
-app.get('/', (req,res)=>{
-    res.send('Server is running')
+app.get('/', (req, res) => {
+  res.send('Server is running')
 })
 
-app.listen(port, ()=>{
-    console.log(`server is running on ${port}`)
+app.listen(port, () => {
+  console.log(`server is running on ${port}`)
 })
