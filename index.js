@@ -33,7 +33,8 @@ async function run() {
     const mealsCollection = dbCollection.collection('meals');
     const packageCollection = dbCollection.collection('packeges');
     const userCollection = dbCollection.collection('users');
-    const paymentCollection = dbCollection.collection('packagePayments')
+    const paymentCollection = dbCollection.collection('packagePayments');
+    const requestedMealCollection = dbCollection.collection('requestedMeal');
 
     // payment intent
     app.post('/create-payment-intent', async (req,res)=>{
@@ -108,6 +109,13 @@ async function run() {
       const result = await userCollection.updateOne(filter,updatedDoc,options)
       res.send(result)
 
+    })
+
+    // meal request api
+    app.post('/requestedMeal', async(req,res)=>{
+       const requestedMeal = req.body;
+       const result = await requestedMealCollection.insertOne(requestedMeal);
+       res.send(result)
     })
 
     // Send a ping to confirm a successful connection
