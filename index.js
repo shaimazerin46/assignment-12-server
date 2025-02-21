@@ -61,7 +61,20 @@ async function run() {
 
     // meals API
     app.get('/meals', async (req,res)=>{
-        const result = await mealsCollection.find().toArray();
+      const { search, category, minPrice, maxPrice} = req.query;
+      let filter = {};
+      if (search) {
+        filter.title = { $regex: search, $options: "i" };
+    }
+    if (category) {
+      filter.category = category;
+  }
+  if (minPrice || maxPrice) {
+    filter.price = {};
+    if (minPrice) filter.price.$gte = parseFloat(minPrice);
+    if (maxPrice) filter.price.$lte = parseFloat(maxPrice);
+  }
+        const result = await mealsCollection.find(filter).toArray();
         res.send(result)
     })
     app.get('/meals/:id', async(req,res)=>{
