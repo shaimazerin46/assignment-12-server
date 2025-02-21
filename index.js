@@ -35,6 +35,7 @@ async function run() {
     const userCollection = dbCollection.collection('users');
     const paymentCollection = dbCollection.collection('packagePayments');
     const requestedMealCollection = dbCollection.collection('requestedMeal');
+    const reviewCollection = dbCollection.collection('reviews');
 
     // payment intent
     app.post('/create-payment-intent', async (req,res)=>{
@@ -116,6 +117,13 @@ async function run() {
        const requestedMeal = req.body;
        const result = await requestedMealCollection.insertOne(requestedMeal);
        res.send(result)
+    })
+
+    // review api
+    app.post('/reviews', async(req,res)=>{
+      const reviewData = req.body;
+      const result = await reviewCollection.insertOne(reviewData);
+      res.send(result)
     })
 
     // Send a ping to confirm a successful connection
