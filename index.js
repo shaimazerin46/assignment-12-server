@@ -61,24 +61,23 @@ async function run() {
 
     // meals API
     app.get('/meals', async (req, res) => {
-      const { search, category, minPrice, maxPrice, page = 1, limit = 6 } = req.query;
+      const { search, category, minPrice, maxPrice} = req.query;
       let filter = {};
       if (search) {
-        filter.title = { $regex: search, $options: "i" };
+        filter.title = { $regex: search, $options: "i" }; //Uses MongoDB's $regex (Regular Expression) to match meal titles containing the search text, Makes the search case-insensitive 
       }
       if (category) {
-        filter.category = category;
-      }
+        filter.category = category; 
+    }
+    
       if (minPrice || maxPrice) {
         filter.price = {};
-        if (minPrice) filter.price.$gte = parseFloat(minPrice);
-        if (maxPrice) filter.price.$lte = parseFloat(maxPrice);
+        if (minPrice) filter.price.$gte = parseFloat(minPrice);//Adds $gte (Greater Than or Equal To) condition
+        
+        if (maxPrice) filter.price.$lte = parseFloat(maxPrice);//Adds $lte (Less Than or Equal To) condition
       }
-
-      const pageNum = parseInt(page);
-      const limitNum = parseInt(limit);
-      const skip = (pageNum - 1) * limitNum;
-      const result = await mealsCollection.find(filter).skip(skip).limit(limitNum).toArray();
+      const result = await mealsCollection.find(filter).toArray();
+    
       res.send(result)
     })
     app.get('/meals/:id', async (req, res) => {
@@ -96,6 +95,7 @@ async function run() {
           like: likedData.like
         }
       }
+      
       const result = await mealsCollection.updateOne(filter, updatedDoc);
       res.send(result)
     })
