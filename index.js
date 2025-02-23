@@ -31,6 +31,7 @@ async function run() {
     const dbCollection = client.db('hostelManagement')
 
     const mealsCollection = dbCollection.collection('meals');
+    const upomingMealsCollection = dbCollection.collection('upcomingMeals')
     const packageCollection = dbCollection.collection('packeges');
     const userCollection = dbCollection.collection('users');
     const paymentCollection = dbCollection.collection('packagePayments');
@@ -97,6 +98,24 @@ async function run() {
       }
       
       const result = await mealsCollection.updateOne(filter, updatedDoc);
+      res.send(result)
+    });
+
+    // upcoming meals
+    app.get('/upcomingMeals', async (req,res)=>{
+    
+      const result = await upomingMealsCollection.find().toArray();
+      res.send(result)
+    })
+    app.patch('/upcomingMeals/:id', async (req,res)=>{
+      const id = req.params.id;
+      const like = req.body
+      const filter = {_id: new ObjectId(id)}
+      const options = {upsert: true};
+      const updatedDoc = {
+        $set: like
+      }
+      const result = await upomingMealsCollection.updateOne(filter,updatedDoc,options);
       res.send(result)
     })
 
