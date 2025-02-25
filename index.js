@@ -87,14 +87,21 @@ async function run() {
       const result = await mealsCollection.findOne(query);
       res.send(result)
     })
+    app.post('/meals', async (req,res)=>{
+      const mealItem = req.body;
+      const result = await mealsCollection.insertOne(mealItem);
+      res.send(result)
+    })
     app.patch('/meals/:id', async (req, res) => {
       const id = req.params.id;
-      const filter = { _id: new ObjectId(id) };
+      const review = req.body;
       const likedData = req.body
+      const filter = { _id: new ObjectId(id) };
+      const filterDoc = {}
+      filterDoc.like = likedData.like;
+      filterDoc.reviewCount = review.reviewsCount;
       const updatedDoc = {
-        $set: {
-          like: likedData.like
-        }
+        $set: filterDoc
       }
       
       const result = await mealsCollection.updateOne(filter, updatedDoc);
