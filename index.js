@@ -139,7 +139,17 @@ async function run() {
       res.send(result)
     })
     app.get('/users', async (req, res) => {
-      const result = await userCollection.find().toArray();
+      const { search } = req.query;
+      let filter = {};
+      if (search) {
+        filter = {
+            $or: [
+                { name: { $regex: search, $options: "i" } }, 
+                { email: { $regex: search, $options: "i" } }
+            ]
+        };
+    }
+      const result = await userCollection.find(filter).toArray();
       res.send(result)
     })
     app.patch('/users/:email', async (req, res) => {
@@ -153,6 +163,17 @@ async function run() {
       const result = await userCollection.updateOne(filter, updatedDoc, options)
       res.send(result)
 
+    })
+    app.patch('/users/admin/:id', async(req,res)=>{
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)};
+      const updatedDoc ={
+        $set: {
+          role: 'admin'
+        }
+      }
+      const result = await userCollection.updateOne(filter,updatedDoc);
+      res.send(result)
     })
 
     // meal request api
