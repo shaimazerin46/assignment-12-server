@@ -92,21 +92,54 @@ async function run() {
       const result = await mealsCollection.insertOne(mealItem);
       res.send(result)
     })
-    app.patch('/meals/:id', async (req, res) => {
+  
+  app.patch('/meals/:id', async (req, res) => {
+    const id = req.params.id;
+    const { like, reviewsCount, title, category, description, ingredients, price, image } = req.body;
+    const filter = { _id: new ObjectId(id) };
+
+    const updateFields = {};
+
+
+    if (like !== undefined) {
+        updateFields.like = like;
+    }
+    if (reviewsCount !== undefined) {
+        updateFields.reviewCount = reviewsCount;
+    }
+    if (title) {
+        updateFields.title = title;
+    }
+    if (category) {
+        updateFields.category = category;
+    }
+    if (description) {
+        updateFields.description = description;
+    }
+    if (ingredients) {
+        updateFields.ingredients = ingredients;
+    }
+    if (price !== undefined) {
+        updateFields.price = parseInt(price);
+    }
+    if (image) {
+        updateFields.image = image;
+    }
+
+    const updatedDoc = { $set: updateFields };
+
+    
+        const result = await mealsCollection.updateOne(filter, updatedDoc);
+        res.send(result);
+   
+});
+
+    app.delete('/meals/:id',async (req, res) =>{
       const id = req.params.id;
-      const review = req.body;
-      const likedData = req.body
       const filter = { _id: new ObjectId(id) };
-      const filterDoc = {}
-      filterDoc.like = likedData.like;
-      filterDoc.reviewCount = review.reviewsCount;
-      const updatedDoc = {
-        $set: filterDoc
-      }
-      
-      const result = await mealsCollection.updateOne(filter, updatedDoc);
+      const result = await mealsCollection.deleteOne(filter);
       res.send(result)
-    });
+    })
 
     // upcoming meals
     app.get('/upcomingMeals', async (req,res)=>{
@@ -186,13 +219,25 @@ async function run() {
     // review api
     app.post('/reviews', async (req, res) => {
       const reviewData = req.body;
+      console.log(reviewData)
       const result = await reviewCollection.insertOne(reviewData);
       res.send(result)
     })
+    app.get('/reviews', async (req,res)=>{
+      const result = await reviewCollection.find().toArray();
+      res.send(result)
+    })
+    app.delete('/reviews/:id', async (req,res)=>{
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)};
+      const result = await reviewCollection.deleteOne(filter);
+      res.send(result)
+    })
+    
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
