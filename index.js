@@ -62,7 +62,7 @@ async function run() {
 
     // meals API
     app.get('/meals', async (req, res) => {
-      const { search, category, minPrice, maxPrice} = req.query;
+      const { search, category, minPrice, maxPrice, sortBy, order} = req.query;
       let filter = {};
       if (search) {
         filter.title = { $regex: search, $options: "i" }; //Uses MongoDB's $regex (Regular Expression) to match meal titles containing the search text, Makes the search case-insensitive 
@@ -77,7 +77,17 @@ async function run() {
         
         if (maxPrice) filter.price.$lte = parseFloat(maxPrice);//Adds $lte (Less Than or Equal To) condition
       }
-      const result = await mealsCollection.find(filter).toArray();
+
+      let sortOptions = {};
+        if (sortBy) {
+            const orderValue = order === "desc" ? -1 : 1; 
+            if (sortBy === "like") {
+                sortOptions.like = orderValue;
+            } else if (sortBy === "reviewCount") {
+                sortOptions.reviewCount = orderValue;
+            }
+        }
+      const result = await mealsCollection.find(filter).sort(sortOptions).toArray();
     
       res.send(result)
     })
