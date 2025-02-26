@@ -215,6 +215,20 @@ async function run() {
       const result = await requestedMealCollection.insertOne(requestedMeal);
       res.send(result)
     })
+    app.get('/requestedMeal', async (req,res)=>{
+      const result = await requestedMealCollection.find().toArray();
+      res.send(result)
+    })
+    app.patch('/requestedMeal/:id', async (req,res)=>{
+      const id = req.params.id;
+      const { status } = req.body;
+      const filter = {_id: new ObjectId(id)};
+      const updatedDoc = {
+        $set: { status: status }
+      }
+      const result = await requestedMealCollection.updateOne(filter,updatedDoc);
+      res.send(result)
+    })
 
     // review api
     app.post('/reviews', async (req, res) => {
