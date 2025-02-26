@@ -216,7 +216,11 @@ async function run() {
       res.send(result)
     })
     app.get('/requestedMeal', async (req,res)=>{
-      const result = await requestedMealCollection.find().toArray();
+      const search = req.query.search || "";
+      const query = search
+            ? { title: { $regex: search, $options: "i" } } 
+            : {};
+      const result = await requestedMealCollection.find(query).toArray();
       res.send(result)
     })
     app.patch('/requestedMeal/:id', async (req,res)=>{
