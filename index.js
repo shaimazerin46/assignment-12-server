@@ -6,7 +6,20 @@ const app = express()
 const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
-app.use(cors());
+const corsOptions = {
+  origin: [
+    'https://hostel-management-ce7be.web.app',
+    'http://localhost:5173' // for local development
+  ],
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
+
+app.use(cors(corsOptions));
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 app.use(express.json());
 
 
@@ -37,6 +50,7 @@ async function run() {
     const paymentCollection = dbCollection.collection('packagePayments');
     const requestedMealCollection = dbCollection.collection('requestedMeal');
     const reviewCollection = dbCollection.collection('reviews');
+    const logCollection = dbCollection.collection('activity-log')
 
     // payment intent
     app.post('/create-payment-intent', async (req, res) => {
@@ -57,6 +71,12 @@ async function run() {
       const payment = req.body;
       const result = await paymentCollection.insertOne(payment);
       console.log("payment info: ", payment)
+      res.send(result)
+    })
+
+    app.get('/payments', async (req,res)=>{
+    
+      const result = await paymentCollection.find().toArray();
       res.send(result)
     })
 
@@ -100,12 +120,20 @@ async function run() {
     app.post('/meals', async (req,res)=>{
       const mealItem = req.body;
       const result = await mealsCollection.insertOne(mealItem);
-      res.send(result)
+      const log = {
+        adminEmail : mealItem.email,
+        action: `Added a meal: ${mealItem.title}` ,
+        timeStamp: mealItem.post_time
+      }
+      const act = await logCollection.insertOne(log)
+      console.log(act)
+      res.send({result,act})
     })
+  
   
   app.patch('/meals/:id', async (req, res) => {
     const id = req.params.id;
-    const { like, reviewsCount, title, category, description, ingredients, price, image } = req.body;
+    const { like, reviewsCount, title, category, description, ingredients, price, image, email } = req.body;
     const filter = { _id: new ObjectId(id) };
 
     const updateFields = {};
@@ -140,21 +168,39 @@ async function run() {
 
     
         const result = await mealsCollection.updateOne(filter, updatedDoc);
-        res.send(result);
+        const log = {
+          adminEmail : email,
+          action: `Updated a meal: ${title}` ,
+          timeStamp: new Date().toUTCString()
+        }
+        const actModified = await logCollection.insertOne(log)
+        res.send({result,actModified});
    
 });
 
     app.delete('/meals/:id',async (req, res) =>{
       const id = req.params.id;
+      const {email} = req.body
       const filter = { _id: new ObjectId(id) };
       const result = await mealsCollection.deleteOne(filter);
-      res.send(result)
+      const log = {
+        adminEmail: email,
+        action: `Deleted a meal: ${id}`,
+        timeStamp: new Date().toUTCString()
+      }
+      const actDeleted = await logCollection.insertOne(log)
+      res.send({result,actDeleted})
     })
 
     // upcoming meals
     app.get('/upcomingMeals', async (req,res)=>{
     
       const result = await upomingMealsCollection.find().toArray();
+      res.send(result)
+    })
+    app.post('/upcomingMeals', async(req,res)=>{
+      const mealData = req.body;
+      const result = await upomingMealsCollection.insertOne(mealData);
       res.send(result)
     })
     app.patch('/upcomingMeals/:id', async (req,res)=>{
@@ -262,10 +308,28 @@ async function run() {
       const result = await reviewCollection.find().toArray();
       res.send(result)
     })
+    app.patch('/reviews/:id', async (req,res)=>{
+      const id = req.params.id;
+      const {review} = req.body;
+      const filter = {_id: new ObjectId(id)};
+      const updatedDoc = {
+        $set: {
+          review
+        }
+      }
+      const result = await reviewCollection.updateOne(filter,updatedDoc);
+      res.send(result)
+    })
     app.delete('/reviews/:id', async (req,res)=>{
       const id = req.params.id;
       const filter = {_id: new ObjectId(id)};
       const result = await reviewCollection.deleteOne(filter);
+      res.send(result)
+    })
+
+    // activity-log api
+    app.get('/log', async (req,res)=>{
+      const result = await logCollection.find().toArray();
       res.send(result)
     })
     
